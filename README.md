@@ -1,135 +1,254 @@
-# Mistral Invoice Processor
+# Invoice Processing Solution with Mistral LLM
 
-A PDF invoice processing system using the Mistral 7B LLM model to extract structured data from invoice PDFs and match them with purchase orders.
+A Python-based solution for automated invoice data extraction, processing, and Purchase Order (PO) matching using the Mistral 7B LLM model.
 
 ## Overview
 
-This project provides an end-to-end solution for processing invoice PDFs and matching them with corresponding purchase orders. It uses the Mistral 7B Instruct model (quantized to run on CPU) to extract structured data from invoices, then matches the extracted data with pending purchase orders using advanced matching algorithms.
+This solution automates the extraction of structured data from invoice PDFs and matches them with pending Purchase Orders. It uses the following technologies:
+
+- **Mistral 7B Instruct**: A lightweight LLM model for invoice text analysis and data extraction
+- **OCR (Tesseract)**: For extracting text from scanned invoice PDFs 
+- **PO Matching API**: For matching extracted invoice data with pending purchase orders
 
 ## Features
 
-- **PDF Text Extraction**: Extracts text from PDF invoices with OCR fallback for scanned documents
-- **Structured Data Extraction**: Uses Mistral 7B LLM to convert unstructured invoice text into structured JSON
-- **Purchase Order Matching**: Matches invoice items with pending purchase orders
-- **Advanced Matching Algorithms**: Uses multiple matching strategies based on quantity, price, and description
-- **Data Normalization**: Processes and normalizes extracted data for consistent output
+- PDF text extraction with OCR fallback for scanned documents
+- Structured invoice data extraction including:
+  - Invoice number and date
+  - Seller and buyer details with GSTIN
+  - Line item details (description, quantity, price, HSN codes)
+  - Tax information (CGST, SGST)
+  - Total amounts
+- Purchase Order matching based on:
+  - GSTIN identification
+  - Intelligent product matching using quantity, price, and description similarity
+  - Flexible matching algorithms to handle real-world variations
 
-## Requirements
+ ## Project Structure 
+📂 MistralInvoiceExtractor
+ ┣ 📂 src
+ ┃ ┣ 📜 __init__.py                   # Makes src a package
+ ┃ ┣ 📜 pdf_processor.py              # PDF to Image and Text Extraction
+ ┃ ┣ 📜 ocr_extractor.py              # OCR + Text Extraction
+ ┃ ┣ 📜 llm_parser.py                 # Mistral LLM Integration
+ ┃ ┣ 📜 po_matcher.py                 # PO Matching (API call)
+ ┃ ┣ 📜 main.py                       # Main Execution Script
+ ┣ 📂 config                          # Configuration files
+ ┃ ┣ 📜 config.py                     # API keys, paths, and parameters
+ ┣ 📂 models                          # LLM model weights
+ ┣ 📂 output                          # Extracted JSON output
+ ┣ 📜 requirements.txt                # Python dependencies
+ ┣ 📜 Dockerfile                      # For containerization
+ ┣ 📜 .gitignore                      # GitHub ignore file
+ ┣ 📜 README.md                       # Documentation
+## Prerequisites
 
-- Python 3.7+
-- Google Colab (for the notebook implementation)
-- Internet connection (for downloading the Mistral model)
-
-## Dependencies
-
-The project requires several Python libraries:
-
-- PyPDF2
-- pytesseract
-- pdf2image
-- Pillow
-- langchain
-- llama-cpp-python
-- requests
-- difflib
-
-System dependencies:
-- tesseract-ocr
-- poppler-utils
+- Python 3.8+
+- 8GB+ RAM (recommended for Mistral model)
+- CUDA-compatible GPU (optional, for faster processing)
+- Internet connection (for API access)
 
 ## Installation
 
-The code is designed to run in Google Colab, which handles the installation of required dependencies. The setup process includes:
+### Option 1: Google Colab (Easiest)
 
-1. Installing system dependencies:
-   ```
-   apt-get update && apt-get install -y tesseract-ocr poppler-utils
-   ```
+1. Open a new Google Colab notebook
+2. Copy and paste the provided code
+3. Run the setup_environment() function to download required dependencies
+4. Run the main processing function
 
-2. Installing Python libraries:
-   ```
-   pip install pypdf2 langchain llama-cpp-python pytesseract pdf2image Pillow requests difflib
-   ```
+### Option 2: Local Installation
 
-3. Downloading the Mistral 7B model:
-   ```
-   wget https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/resolve/main/mistral-7b-instruct-v0.1.Q2_K.gguf
-   ```
+1. Clone the repository
+```bash
+git clone https://github.com/katanaml/llm-mistral-invoice-cpu
+cd llm-mistral-invoice-cpu
+```
+
+2. Install the dependencies
+```bash
+pip install -r requirements.txt
+```
+
+3. Download the Mistral model
+```bash
+mkdir -p models
+wget https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/resolve/main/mistral-7b-instruct-v0.1.Q2_K.gguf -P models
+```
+
+4. Install system dependencies
+```bash
+# For Ubuntu/Debian
+sudo apt-get update && sudo apt-get install -y tesseract-ocr poppler-utils
+
+# For macOS
+brew install tesseract poppler
+```
 
 ## Usage
 
-### Basic Processing
+### Basic Invoice Processing
 
-To process an invoice PDF:
+```python
+# Import the main processing function
+from mistral_invoice_processor import process_invoice_pdf
 
-1. Run the setup function to install dependencies and download the model:
-   ```python
-   setup_environment()
-   ```
+# Run the invoice processor
+process_invoice_pdf()
+```
 
-2. Process the invoice with:
-   ```python
-   process_invoice_pdf()
-   ```
+### Invoice Processing with PO Matching
 
-3. Upload your invoice PDF when prompted
+```python
+# Import the PO matching processor
+from mistral_invoice_processor import process_invoice_pdf_with_po_matching
 
-### PO Matching Processing
+# Run the invoice processor with PO matching
+process_invoice_pdf_with_po_matching()
+```
 
-To process an invoice and match with purchase orders:
+## Deployment Options
 
-1. Run the setup function:
-   ```python
-   setup_environment()
-   ```
+### Option 1: Web Service with Flask
 
-2. Process the invoice with PO matching:
-   ```python
-   process_invoice_pdf_with_po_matching()
-   ```
+1. Create a Flask application to wrap the processor:
 
-3. Upload your invoice PDF when prompted
+```python
+from flask import Flask, request, jsonify
+import io
+from mistral_invoice_processor import extract_text_from_pdf, process_invoice_with_mistral
 
-## How It Works
+app = Flask(__name__)
 
-### Invoice Text Extraction
+@app.route('/process-invoice', methods=['POST'])
+def process_invoice():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+    
+    if file and file.filename.endswith('.pdf'):
+        pdf_content = file.read()
+        invoice_text = extract_text_from_pdf(pdf_content)
+        if invoice_text:
+            result = process_invoice_with_mistral(invoice_text)
+            return jsonify(result)
+        else:
+            return jsonify({"error": "Failed to extract text from PDF"}), 500
+    else:
+        return jsonify({"error": "Invalid file format. Please upload a PDF."}), 400
 
-1. The PDF is first processed to extract embedded text
-2. If no embedded text is found, OCR is used as a fallback
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
+```
 
-### Structured Data Extraction
+2. Deploy with Docker:
 
-1. The extracted text is sent to the Mistral 7B LLM with a specific prompt
-2. The model extracts structured information including:
-   - Invoice number
-   - Invoice date
-   - Seller details
-   - Buyer details
-   - Product/service details
-   - Tax information
-   - Total amount
+Create a Dockerfile:
+```dockerfile
+FROM python:3.9-slim
 
-### PO Matching
+WORKDIR /app
 
-1. The GSTIN is extracted from the structured invoice data
-2. The API is queried to fetch pending PO items for the extracted GSTIN
-3. Each invoice item is matched with PO items using:
-   - Quantity matching
-   - Price matching
-   - Description similarity
-4. The best matching PO is identified for each invoice item
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    tesseract-ocr \
+    poppler-utils \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-## Output
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-The system generates a JSON file containing:
-- Party ID
-- Invoice number
-- Invoice date
-- Matched items (with PO numbers)
-- Discount information
-- Currency
+# Create model directory and download model
+RUN mkdir -p models
+RUN wget https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/resolve/main/mistral-7b-instruct-v0.1.Q2_K.gguf -P models
+
+# Copy application code
+COPY . .
+
+# Expose the port
+EXPOSE 5000
+
+# Run the application
+CMD ["python", "app.py"]
+```
+
+3. Build and run:
+```bash
+docker build -t invoice-processor .
+docker run -p 5000:5000 invoice-processor
+```
+
+### Option 2: Cloud Function / Lambda
+
+1. Create handlers for AWS Lambda or Google Cloud Functions
+2. Package the dependencies with the function
+3. Set appropriate memory allocation (minimum 2GB recommended)
+4. Configure API Gateway or HTTP trigger
+
+### Option 3: Scheduled Batch Processing
+
+For processing invoices in batches:
+
+1. Set up a folder structure for incoming/processed invoices
+2. Create a script to monitor the folders and process new files
+3. Schedule the script using cron or a scheduler
+4. Integrate with email/notification systems for results
 
 ## API Configuration
 
-For the PO matching functionality, the following API configuration is used:
-- Base URL: http://uat.xserp.in/erp/purchase/json/po/pending_po_report/
+To use the PO matching functionality, configure the API details:
+
+```python
+# PO API configuration
+BASE_URL = "http://your-api-endpoint.com/path"
+API_KEY = "your-api-key"
+
+# Initialize the processor
+processor = IntegratedPOInvoiceProcessor(BASE_URL, API_KEY)
+```
+
+## Customization
+
+### Adjusting the Prompt
+
+The extraction quality can be customized by modifying the prompt in the `process_invoice_with_mistral` function:
+
+```python
+prompt = f"""
+<instruction>
+Extract structured invoice data into a JSON object from the provided invoice text. Use EXACTLY the following format and field names:
+...
+</instruction>
+<invoice_text>
+{invoice_text}
+</invoice_text>
+"""
+```
+
+### Model Parameters
+
+You can adjust the Mistral model parameters for better performance:
+
+```python
+llm = LlamaCpp(
+    model_path="models/mistral-7b-instruct-v0.1.Q2_K.gguf",
+    temperature=0.0,  # Lower for more deterministic results
+    max_tokens=4000,  # Adjust based on your needs
+    n_ctx=4096,       # Context window size
+    n_batch=512,      # Processing batch size
+    f16_kv=True,      # Enables half-precision for better performance
+)
+```
+
+## Troubleshooting
+
+- **OCR Issues**: For poor quality scans, try adjusting Tesseract parameters
+- **Memory Errors**: Reduce batch size or use a smaller model
+- **Invoice Number Extraction**: Modify regex patterns to match your specific invoice number format
+- **PO Matching Failures**: Adjust the matching thresholds in the processor class
+
