@@ -30,20 +30,20 @@ This solution automates the extraction of structured data from invoice PDFs and 
 ```
 📂 MistralInvoiceExtractor
  ┣ 📂 src
- ┃ ┣ 📜 __init__.py                   # Makes src a package
- ┃ ┣ 📜 pdf_processor.py              # PDF to Image and Text Extraction
- ┃ ┣ 📜 ocr_extractor.py              # OCR + Text Extraction
- ┃ ┣ 📜 llm_parser.py                 # Mistral LLM Integration
- ┃ ┣ 📜 po_matcher.py                 # PO Matching (API call)
- ┃ ┣ 📜 main.py                       # Main Execution Script
- ┣ 📂 config                          # Configuration files
- ┃ ┣ 📜 config.py                     # API keys, paths, and parameters
- ┣ 📂 models                          # LLM model weights
- ┣ 📂 output                          # Extracted JSON output
- ┣ 📜 requirements.txt                # Python dependencies
- ┣ 📜 Dockerfile                      # For containerization
- ┣ 📜 .gitignore                      # GitHub ignore file
- ┣ 📜 README.md                       # Documentation
+ ┃ ┣ 📜 __init__.py                   
+ ┃ ┣ 📜 pdf_processor.py              
+ ┃ ┣ 📜 ocr_extractor.py              
+ ┃ ┣ 📜 llm_parser.py                 
+ ┃ ┣ 📜 po_matcher.py                 
+ ┃ ┣ 📜 main.py                       
+ ┣ 📂 config                          
+ ┃ ┣ 📜 config.py                     
+ ┣ 📂 models                          
+ ┣ 📂 output                          
+ ┣ 📜 requirements.txt                
+ ┣ 📜 Dockerfile                     
+ ┣ 📜 .gitignore                     
+ ┣ 📜 README.md                       
 ```
 
 ## Prerequisites
