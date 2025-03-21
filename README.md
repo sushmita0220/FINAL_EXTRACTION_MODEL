@@ -24,7 +24,10 @@ This solution automates the extraction of structured data from invoice PDFs and 
   - Intelligent product matching using quantity, price, and description similarity
   - Flexible matching algorithms to handle real-world variations
 
- ## Project Structure 
+
+## 🏗️ Project Structure
+
+```
 📂 MistralInvoiceExtractor
  ┣ 📂 src
  ┃ ┣ 📜 __init__.py                   # Makes src a package
@@ -41,6 +44,8 @@ This solution automates the extraction of structured data from invoice PDFs and 
  ┣ 📜 Dockerfile                      # For containerization
  ┣ 📜 .gitignore                      # GitHub ignore file
  ┣ 📜 README.md                       # Documentation
+```
+
 ## Prerequisites
 
 - Python 3.8+
